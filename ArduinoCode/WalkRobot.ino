@@ -21,6 +21,7 @@
 //#include <SPI.h>
   #include <nRF24L01.h>
   #include <RF24.h>
+  #include <math.h>
   
   RF24 radio(3, 2);   // nRF24L01 (CE, CSN)
   const byte address[6] = "00001";
@@ -61,6 +62,10 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 uint8_t servonum = 0;
 int degree[16];// = {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0};
 
+float a = 0;
+float Z = 0;
+
+
 void setup() {
   Serial.begin(9600);
   Serial.println("8 channel Servo test!");
@@ -97,12 +102,12 @@ void loop() {
   }
 
   // Print Result
-  /*
+  
   Serial.print("Joystick 1X: ");
   Serial.print(data.j1PotX);
   Serial.print(" Joystick 1Y: ");
-  Serial.print(data.j1PotY);
-  
+  Serial.println(data.j1PotY);
+  /*
   Serial.print(" Joystick 2X: ");
   Serial.print(data.j2PotX);
   Serial.print(" Joystick 2Y: ");
@@ -121,17 +126,74 @@ void loop() {
   Serial.print(data.pot1);
   Serial.print(" Pot 2: ");
   Serial.println(data.pot2);
+  
   */
+
+
+  // HC-05 Blutooth
+  if(Serial.available()>0){
+  int i;
+  char data = Serial.read();
+    switch(data){
+      case 'a':
+            for (i=0; i<11;i++){
+              Z++;
+              }
+              break;
+  
+  
+      case 'c':
+      for (i=0; i<11;i++){
+              Z--;
+              }
+                break;
+  
+      
+    }
+  }
+
+
+
+  
+  //Serial.println(data.j1PotX);
+  // Z = map(data.j1PotX,0,255, 0, 90);
+  Z = 50;
+
 
   // MAIN
   calcLeg();
 
-  command(data.button1);
-  Serial.println(degree[0]);
+  // command Stand
+  // Vorne Rechts
+  degree[0] = a;
+  degree[1] = -a;
+  degree[2] = 0;
+  degree[3] = 0;
+  
+  // Hinten Rechts
+  degree[4] = -a;
+  degree[5] = a;
+  degree[6] = 0;
+  degree[7] = 0;
+ 
+  // Hinten Links
+  degree[8] = a;
+  degree[9] = -a;
+  degree[10] = 0;
+  degree[11] = 0;
+
+  // Vorne Links
+  degree[12] = -a;
+  degree[13] = a;
+  degree[14] = 0;
+  degree[15] = 0;
+          
+
+  
   servo();
 
 
-  delay(50);
+  delay(5);
 }
 
 
@@ -142,7 +204,13 @@ void calcLeg(){
   int L1 = 45;
   int S1 = 23;
   int H1 = 23;
+  a = acos((Z/2)/L0)*(180/3.14);
+ 
 
+
+
+ /*
+  
   int a0 = degree[0];
   int a1 = degree[1];
   int a2 = degree[2];
@@ -183,59 +251,13 @@ void calcLeg(){
   Z = ZHip+10;
   X = XHip-11;
   Y = YHip-48;
+  */
   
   }
 
 
-void command(int select){
-  Serial.println(select);
-  switch (select){
-    case 0:
-       // command Stand
-          degree[0] = 0;
-          degree[1] = 0;
-          degree[2] = 0;
-          degree[3] = 0;
-          
-          degree[4] = 0;
-          degree[5] = 0;
-          degree[6] = 0;
-          degree[7] = 0;
-          
-          degree[8] = 0;
-          degree[9] = 0;
-          degree[10] = 0;
-          degree[11] = 0;
-          
-          degree[12] = 0;
-          degree[13] = 0;
-          degree[14] = 0;
-          degree[15] = 0;
-          
-      case 1:
-          // command Sit
-          degree[0] = 90;
-          degree[1] = 0;
-          degree[2] = 0;
-          degree[3] = 0;
-          
-          degree[4] = 90;
-          degree[5] = 0;
-          degree[6] = 0;
-          degree[7] = 0;
-          
-          degree[8] = 90;
-          degree[9] = 0;
-          degree[10] = 0;
-          degree[11] = 0;
-          
-          degree[12] = 90;
-          degree[13] = 0;
-          degree[14] = 0;
-          degree[15] = 0;
-    }
-  }
-  
+
+ 
 void resetData() {
   // Reset the values when there is no radio connection - Set initial default values
   data.j1PotX = 127;
@@ -255,13 +277,10 @@ void resetData() {
 }
 
 
-
-
-
  void servo() {
   // put your main code here, to run repeatedly://100
 
-  // HINTEN
+  // Vorne Rechts
   int pulse0 = map(degree[0], -90,90, 510, 100);
   int pulse1 = map(degree[1], -90,90, 510, 100); 
   int pulse2 = map(degree[2], -90,90, 100, 510);
@@ -271,18 +290,19 @@ void resetData() {
   pwm.setPWM(1,0,pulse1);
   pwm.setPWM(2,0,pulse2);
   pwm.setPWM(3,0,pulse3);
-
+  
+  // Hinten Rechts
   int pulse4 = map(degree[4], -90,90, 100, 510);
   int pulse5 = map(degree[5], -90,90, 100, 510); 
   int pulse6 = map(degree[6], -90,90, 510, 100);
   int pulse7 = map(degree[7], -90,90, 510, 100);
-   
+
   pwm.setPWM(4,0,pulse4);
   pwm.setPWM(5,0,pulse5);
   pwm.setPWM(6,0,pulse6);
   pwm.setPWM(7,0,pulse7);
-
-  // VORNE
+  
+ // Hinten Links
   int pulse8 = map(degree[8], -90,90, 100, 510);
   int pulse9 = map(degree[9], -90,90, 100, 510); 
   int pulse10 = map(degree[10], -90,90, 510, 100);
@@ -292,17 +312,15 @@ void resetData() {
   pwm.setPWM(9,0,pulse9);
   pwm.setPWM(10,0,pulse10);
   pwm.setPWM(11,0,pulse11);
-
+  
+  // Vorne Links
   int pulse12 = map(degree[12], -90,90, 510, 100);
   int pulse13 = map(degree[13], -90,90, 510, 100); 
   int pulse14 = map(degree[14], -90,90, 100, 510);
-  int pulse15 = map(degree[15], -90,90, 100, 510);
-   
+  int pulse15 = map(degree[15], -90,90, 50, 510);
+  
   pwm.setPWM(12,0,pulse12);
   pwm.setPWM(13,0,pulse13);
   pwm.setPWM(14,0,pulse14);
   pwm.setPWM(15,0,pulse15);
-
- // int test =pwm.getPWM(15);
- // Serial.println(test);
 }
